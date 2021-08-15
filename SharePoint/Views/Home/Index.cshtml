@@ -11,7 +11,7 @@
 
         })
         .ToolBar(toolbar => toolbar.Create())
-        .Editable(editable => editable.Mode(GridEditMode.PopUp))
+        .Editable(editable => editable.Mode(GridEditMode.InLine))
         .Pageable()
         .Sortable()
         .Scrollable()
@@ -32,8 +32,34 @@
             )
     )
 
-<script>
-function onError(e) {
-    console.log(e.status);
-}
+<script type="text/javascript">
+
+    //register custom validation rules
+    $(document).ready(function () {
+
+        $.extend(true, kendo.ui.validator, {
+            rules: { // custom rules
+                releaseDateValidation: function (input) {
+                    //check if it is the ReleaseDate field                    
+                    if (input.is("[name=ReleaseDate]") && input.val()) {
+                        var a = input.val().split(".");
+                        if (a.length < 2) {
+                            input.attr("data-releasedatevalidation-msg", "Enter a valid month & year");
+                            return false;
+                        }
+                        if (a[0] < 1 || a[0] > 12) {
+                            input.attr("data-releasedatevalidation-msg", "Enter a valid month between (01 - 12)");
+                            return false;
+                        }
+                        if (a[1] < 1900 || a[1] > 2022) {
+                            input.attr("data-releasedatevalidation-msg", "Enter a valid year between (1900 - 2022)");
+                            return false;
+                        }                        
+                    }
+                    return true;
+                }
+            }
+        });
+    });    
 </script>
+    
