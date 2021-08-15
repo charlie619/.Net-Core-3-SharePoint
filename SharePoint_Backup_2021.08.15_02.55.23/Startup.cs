@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -25,17 +23,6 @@ namespace SharePoint
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // Add framework services.
-            services
-                .AddControllersWithViews()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
-                // Maintain property names during serialization. See:
-                // https://github.com/aspnet/Announcements/issues/194
-                .AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
-
-            // Add Kendo UI services to the services container
-            services.AddKendo();
-
             services.AddControllersWithViews();
         }
 

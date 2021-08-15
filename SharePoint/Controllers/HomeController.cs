@@ -8,6 +8,8 @@ using System.Linq;
 using System.Security;
 using Microsoft.SharePoint.Client;
 using System.Threading.Tasks;
+using Kendo.Mvc.Extensions;
+using Kendo.Mvc.UI;
 
 namespace SharePoint.Controllers
 {
@@ -17,7 +19,7 @@ namespace SharePoint.Controllers
 
         Uri site = new Uri("https://charlie619.sharepoint.com/sites/sampleSite");
         string user = "charlie@charlie619.onmicrosoft.com";
-        string rawPassword = "Apple@3579";        
+        string rawPassword = "Apple@3579";
 
         public HomeController(ILogger<HomeController> logger)
         {
@@ -26,12 +28,18 @@ namespace SharePoint.Controllers
         [HttpGet]
         public IActionResult Index()
         {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult GetSongs([DataSourceRequest] DataSourceRequest request)
+        {
             var listItems = new List<Songs>();
 
             SecureString password = new SecureString();
             foreach (char c in rawPassword) password.AppendChar(c);
 
-            using (ConnectionSetting authenticationManager = new ConnectionSetting())            
+            using (ConnectionSetting authenticationManager = new ConnectionSetting())
             using (var context = authenticationManager.GetContext(site, user, password))
             {
 
@@ -54,72 +62,68 @@ namespace SharePoint.Controllers
 
                     listItems.Add(obj);
                 }
-
-                return View(listItems);
+                var dsResult = listItems.ToDataSourceResult(request);
+                return Json(dsResult);
             }
         }
-        [HttpGet]
-        public IActionResult Create()
-        {
-            return View();
-        }
-
 
         [HttpPost]
-        public IActionResult Create(Songs song)
+        public IActionResult CreateSong([DataSourceRequest] DataSourceRequest request, Songs song)
         {
-            SecureString password = new SecureString();
-            foreach (char c in rawPassword) password.AppendChar(c);
-
-            using (ConnectionSetting authenticationManager = new ConnectionSetting())            
-            using (var context = authenticationManager.GetContext(site, user, password))
+            if (ModelState.IsValid)
             {
-                var oList = context.Web.Lists.GetByTitle("Songs");
-                ListItemCreationInformation data = new ListItemCreationInformation();
-                ListItem oListItem = oList.AddItem(data);
+                SecureString password = new SecureString();
+                foreach (char c in rawPassword) password.AppendChar(c);
 
-                oListItem["Title"] = song.Title;
-                oListItem["Author0"] = song.Author;
-                oListItem["ReleaseDate"] = song.ReleaseDate;
+                using (ConnectionSetting authenticationManager = new ConnectionSetting())
+                using (var context = authenticationManager.GetContext(site, user, password))
+                {
+                    var oList = context.Web.Lists.GetByTitle("Songs");
+                    ListItemCreationInformation data = new ListItemCreationInformation();
+                    ListItem oListItem = oList.AddItem(data);
 
-                oListItem.Update();
-                context.ExecuteQuery();
+                    oListItem["Title"] = song.Title;
+                    oListItem["Author0"] = song.Author;
+                    oListItem["ReleaseDate"] = song.ReleaseDate;
 
+                    oListItem.Update();
+                    context.ExecuteQuery();
+
+                }
             }
 
-            return RedirectToAction("Index");
+            return Json(new[] { song }.ToDataSourceResult(request, ModelState));
         }
-
-        [HttpGet]
-        public IActionResult Edit(int id)
-        {
-            SecureString password = new SecureString();
-            foreach (char c in rawPassword) password.AppendChar(c);
-
-            using (ConnectionSetting authenticationManager = new ConnectionSetting())
-            using (var context = authenticationManager.GetContext(site, user, password))
-            {
-                var oList = context.Web.Lists.GetByTitle("Songs");
-                ListItem listItem = oList.GetItemById(id);
-
-                context.Load(listItem, item => item);
-
-                context.ExecuteQuery();
-                Songs song = new Songs() {
-                    Id = id,
-                    Title = (string)listItem["Title"],
-                    Author = (string)listItem["Author0"],
-                    ReleaseDate = (double)listItem["ReleaseDate"]
-                };
-                
-                return View(song);
-            }            
-        }
-
 
         [HttpPost]
-        public IActionResult Edit(Songs song)
+        public IActionResult UpdateSong([DataSourceRequest] DataSourceRequest request, Songs song)
         {
+            if (ModelState.IsValid)
+            {
+                SecureString password = new SecureString();
+                foreach (char c in rawPassword) password.AppendChar(c);
+
+                using (ConnectionSetting authenticationManager = new ConnectionSetting())
+                using (var context = authenticationManager.GetContext(site, user, password))
+                {
+                    var oList = context.Web.Lists.GetByTitle("Songs");
+                    ListItem listItem = oList.GetItemById(song.Id);
+
+                    listItem["Title"] = song.Title;
+                    listItem["Author0"] = song.Author;
+                    listItem["ReleaseDate"] = song.ReleaseDate;
+                    listItem.Update();
+
+                    context.ExecuteQuery();
+                }
+            }
+            return Json(new[] { song }.ToDataSourceResult(request, ModelState));
+        }
+
+        [HttpPost]
+        public IActionResult DeleteSong([DataSourceRequest] DataSourceRequest request, Songs song)
+        {
+
             SecureString password = new SecureString();
             foreach (char c in rawPassword) password.AppendChar(c);
 
@@ -129,36 +133,12 @@ namespace SharePoint.Controllers
                 var oList = context.Web.Lists.GetByTitle("Songs");
                 ListItem listItem = oList.GetItemById(song.Id);
 
-                listItem["Title"] = song.Title;
-                listItem["Author0"] = song.Author;
-                listItem["ReleaseDate"] = song.ReleaseDate;
-                listItem.Update();
-
-                context.ExecuteQuery();
-            }
-
-            return RedirectToAction("Index");
-        }
-
-        [HttpGet]
-        public IActionResult Delete(int id)
-        {
-            SecureString password = new SecureString();
-            foreach (char c in rawPassword) password.AppendChar(c);
-
-            using (ConnectionSetting authenticationManager = new ConnectionSetting())
-            using (var context = authenticationManager.GetContext(site, user, password))
-            {
-                var oList = context.Web.Lists.GetByTitle("Songs");
-                ListItem listItem = oList.GetItemById(id);
-
                 listItem.DeleteObject();
                 context.ExecuteQuery();
-
-                return RedirectToAction("Index");
             }
-        }
 
+            return Json(new[] { song }.ToDataSourceResult(request));
+        }
 
 
         public IActionResult Privacy()

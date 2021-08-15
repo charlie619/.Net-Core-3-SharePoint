@@ -1,53 +1,39 @@
-﻿@model IEnumerable<SharePoint.Models.Songs>
-@{
-    ViewData["Title"] = "List Items";
-}
+﻿
+@(Html.Kendo().Grid<SharePoint.Models.Songs>()
+        .Name("grid")
+        .Columns(columns =>
+        {
+            columns.Bound(p => p.Id).Filterable(false);
+            columns.Bound(p => p.Title);
+            columns.Bound(p => p.Author);
+            columns.Bound(p => p.ReleaseDate);
+            columns.Command(command => { command.Edit(); command.Destroy(); }).Width(160);
 
-<h1>Details</h1>
-
-<div>
-    <h4>Songs</h4>
-    <hr />
-    <p>
-        <a asp-action="Create">Create New</a>
-    </p>
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th class="col-md-3">
-                    @Html.DisplayNameFor(model => model.Title)
-                </th>
-                <th class="col-md-3">
-                    @Html.DisplayNameFor(model => model.Author)
-                </th>
-                <th class="col-md-3">
-                    @Html.DisplayNameFor(model => model.ReleaseDate)
-                </th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
+        })
+        .ToolBar(toolbar => toolbar.Create())
+        .Editable(editable => editable.Mode(GridEditMode.PopUp))
+        .Pageable()
+        .Sortable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:550px;" })
+        .DataSource(dataSource => dataSource
+            .Ajax()
+            .Model(model =>
             {
-                <tr>
-                    <td class="col-md-3">
-                        @Html.DisplayFor(modelItem => item.Title)
-                    </td>
-                    <td class="col-md-3">
-                        @Html.DisplayFor(modelItem => item.Author)
-                    </td>
-                    <td class="col-md-3">
-                        @Html.DisplayFor(modelItem => item.ReleaseDate)
-                    </td>
+                model.Id(song => song.Id); // Specify the property which is the unique identifier of the model.
+                model.Field(song => song.Id).Editable(false); // Make the OrderID property not editable.
+            })
+            .PageSize(20)
+            .Read(read => read.Action("GetSongs", "Home"))
+            .Create(create => create.Action("CreateSong", "Home"))
+            .Update(update => update.Action("UpdateSong", "Home"))
+            .Destroy(destroy => destroy.Action("DeleteSong", "Home"))
+            )
+    )
 
-                    <td class="col-md-3">
-                        <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-                    </td>
-                </tr>                
-            }
-        </tbody>
-    </table>
-</div>
-
+<script>
+function onError(e) {
+    console.log(e.status);
+}
+</script>
