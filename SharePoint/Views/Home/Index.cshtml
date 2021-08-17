@@ -1,65 +1,130 @@
-﻿
-@(Html.Kendo().Grid<SharePoint.Models.Songs>()
-        .Name("grid")
-        .Columns(columns =>
-        {
-            columns.Bound(p => p.Id).Filterable(false);
-            columns.Bound(p => p.Title);
-            columns.Bound(p => p.Author);
-            columns.Bound(p => p.ReleaseDate);
-            columns.Command(command => { command.Edit(); command.Destroy(); }).Width(160);
+﻿<div id="songsGrid"></div>
 
-        })
-        .ToolBar(toolbar => toolbar.Create())
-        .Editable(editable => editable.Mode(GridEditMode.InLine))
-        .Pageable()
-        .Sortable()
-        .Scrollable()
-        .Filterable()
-        .HtmlAttributes(new { style = "height:550px;" })
-        .DataSource(dataSource => dataSource
-            .Ajax()
-            .Model(model =>
-            {
-                model.Id(song => song.Id); // Specify the property which is the unique identifier of the model.
-                model.Field(song => song.Id).Editable(false); // Make the OrderID property not editable.
-            })
-            .PageSize(20)
-            .Read(read => read.Action("GetSongs", "Home"))
-            .Create(create => create.Action("CreateSong", "Home"))
-            .Update(update => update.Action("UpdateSong", "Home"))
-            .Destroy(destroy => destroy.Action("DeleteSong", "Home"))
-            )
-    )
-
-<script type="text/javascript">
-
-    //register custom validation rules
-    $(document).ready(function () {
-
-        $.extend(true, kendo.ui.validator, {
-            rules: { // custom rules
-                releaseDateValidation: function (input) {
-                    //check if it is the ReleaseDate field                    
-                    if (input.is("[name=ReleaseDate]") && input.val()) {
-                        var a = input.val().split(".");
-                        if (a.length < 2) {
-                            input.attr("data-releasedatevalidation-msg", "Enter a valid month & year");
-                            return false;
-                        }
-                        if (a[0] < 1 || a[0] > 12) {
-                            input.attr("data-releasedatevalidation-msg", "Enter a valid month between (01 - 12)");
-                            return false;
-                        }
-                        if (a[1] < 1900 || a[1] > 2022) {
-                            input.attr("data-releasedatevalidation-msg", "Enter a valid year between (1900 - 2022)");
-                            return false;
-                        }                        
-                    }
-                    return true;
-                }
-            }
-        });
-    });    
-</script>
+<script>
     
+    $(document).ready(function () {
+        var dataSource = new kendo.data.DataSource({
+            transport: {
+                read: function (options) {
+                    $.ajax({
+                        url: "@Url.Action("GetSongs","Sharepoint")",
+                        dataType: "json",
+                        cache: false,
+                        success: function (result) {
+                            options.success(result);
+                        },
+                        error: function (data) {
+                            alert(data.responseText);
+                        }
+                    });
+                },
+                create: function (options) {
+                    debugger;
+                    options.data.Id = 0;
+                    var dataModel = JSON.stringify(options.data);
+                    $.ajax({
+                        url: "@Url.Action("CreateSong", "Sharepoint")",
+                        type: "post",
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        cache: false,
+                        data: dataModel,
+                        complete: function (data) {
+                            $("#songsGrid").data("kendoGrid").dataSource.read();
+                        },
+                        error: function (data) {
+                            alert(data.responseText);
+                            $("#songsGrid").data("kendoGrid").dataSource.read();
+                        },
+                    });
+                },
+                update: function (options) {
+                    var dataModel = JSON.stringify(options.data);
+                    $.ajax({
+                        url: "@Url.Action("UpdateSong", "Sharepoint")",
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        type: "put",
+                        cache: false,
+                        data: dataModel,
+                        complete: function (data) {
+                            $("#songsGrid").data("kendoGrid").dataSource.read();
+                        },
+                        error: function (data) {
+                            alert(data.responseText);
+                            $("#songsGrid").data("kendoGrid").dataSource.read();
+                        },
+                        parameterMap: function (options, operation) {
+                            if (operation !== "read" && options.models) {
+                                return { models: kendo.stringify(options.models) };
+                            }
+                        }
+                    });
+                },
+                destroy: function (options) {
+                    var dataModel = JSON.stringify(options.data);
+                    $.ajax({                        
+                        url: "@Url.Action("DeleteSong", "Sharepoint")",
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        type: "delete",                        
+                        cache: false,
+                        data: dataModel,
+                        complete: function (data) {
+                            $("#songsGrid").data("kendoGrid").dataSource.read();
+                        },
+                        error: function (data) {
+                            alert(data.responseText);
+                            $("#songsGrid").data("kendoGrid").dataSource.read();
+                        }
+                    });
+                }
+            },
+            schema: {
+                model: {
+                    id: "Id",
+                    fields: {
+                        //Id: { type: "number", editable: false },
+                        Title: { type: "string", editable: true, validation: { required: true } },
+                        Author: { type: "string", editable: true, validation: { required: true } },
+                        ReleaseDate: { type: "string", editable: true, validation: { required: true } },
+                    }
+                }
+            },
+        });
+
+        $("#songsGrid").kendoGrid({
+            dataSource: dataSource,
+            editable: "popup",
+            groupable: true,
+            pageable: {
+                refresh: true,
+                pageSizes: true,
+                buttonCount: 5
+            },
+            sortable: true,
+            filterable: true,
+            height: 500,
+            edit: function (e) {
+                e.container.find("input:first").prop('disabled', true);
+            },
+            toolbar: ["create"],
+            columns: [{
+                field: "Id",
+                title: "ID",
+                width: 160
+            }, {
+                field: "Title",
+                width: 160,
+            }, {
+                field: "Author",
+                title: "Author",
+                width: 200,
+            }, {
+                field: "ReleaseDate",
+                title: "Release Date (mm.yyyy)"
+            }, { command: ["edit", "destroy"], title: "&nbsp;", width: "200px" }]
+
+        }).data("kendoGrid");
+    });
+</script>

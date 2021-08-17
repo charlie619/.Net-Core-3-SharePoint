@@ -34,7 +34,7 @@ namespace SharePoint
                 .AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
             // Add Kendo UI services to the services container
-            services.AddKendo();
+            //services.AddKendo();
 
             services.AddControllersWithViews();
         }
