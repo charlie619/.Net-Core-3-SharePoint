@@ -28,7 +28,6 @@ namespace SharePoint.Controllers
         public Uri site { get; set; }
 
 
-        // GET: api/<SharepointController>
         [HttpGet]
         public IActionResult GetSongs()
         {
@@ -65,7 +64,6 @@ namespace SharePoint.Controllers
             }
         }        
 
-        // POST api/<SharepointController>
         [HttpPost]
         public async Task<IActionResult> CreateSong(Songs song)
         {
@@ -93,7 +91,6 @@ namespace SharePoint.Controllers
             return Ok("Song has been created successfully!!!");
         }
 
-        // PUT api/<SharepointController>/5
         [HttpPut]
         public async Task<IActionResult> UpdateSong(Songs song)
         {
@@ -119,7 +116,6 @@ namespace SharePoint.Controllers
             return Ok("Song has been Updated!!!");
         }
 
-        // DELETE api/<SharepointController>/5
         [HttpDelete]
         public async Task<IActionResult> DeleteSong(Songs song)
         {

@@ -1,7 +1,7 @@
 ﻿<div id="songsGrid"></div>
 
 <script>
-    
+
     $(document).ready(function () {
         var dataSource = new kendo.data.DataSource({
             transport: {
@@ -19,10 +19,11 @@
                     });
                 },
                 create: function (options) {
-                    debugger;
                     options.data.Id = 0;
                     var dataModel = JSON.stringify(options.data);
-                    $.ajax({
+
+                    if (validateDate(options.data.ReleaseDate)) {
+                        $.ajax({
                         url: "@Url.Action("CreateSong", "Sharepoint")",
                         type: "post",
                         dataType: "json",
@@ -36,11 +37,17 @@
                             alert(data.responseText);
                             $("#songsGrid").data("kendoGrid").dataSource.read();
                         },
-                    });
+                        });
+                    } else {
+                        $("#songsGrid").data("kendoGrid").dataSource.read();
+                    }
+
                 },
                 update: function (options) {
                     var dataModel = JSON.stringify(options.data);
-                    $.ajax({
+
+                    if (validateDate(options.data.ReleaseDate)) {
+                        $.ajax({
                         url: "@Url.Action("UpdateSong", "Sharepoint")",
                         dataType: "json",
                         contentType: "application/json; charset=utf-8",
@@ -48,6 +55,7 @@
                         cache: false,
                         data: dataModel,
                         complete: function (data) {
+                            debugger;
                             $("#songsGrid").data("kendoGrid").dataSource.read();
                         },
                         error: function (data) {
@@ -59,15 +67,18 @@
                                 return { models: kendo.stringify(options.models) };
                             }
                         }
-                    });
+                        });
+                    } else {
+                        $("#songsGrid").data("kendoGrid").dataSource.read();
+                    }
                 },
                 destroy: function (options) {
                     var dataModel = JSON.stringify(options.data);
-                    $.ajax({                        
+                    $.ajax({
                         url: "@Url.Action("DeleteSong", "Sharepoint")",
                         dataType: "json",
                         contentType: "application/json; charset=utf-8",
-                        type: "delete",                        
+                        type: "delete",
                         cache: false,
                         data: dataModel,
                         complete: function (data) {
@@ -126,5 +137,34 @@
             }, { command: ["edit", "destroy"], title: "&nbsp;", width: "200px" }]
 
         }).data("kendoGrid");
+
+        var validator = $("#songsGrid").kendoValidator().data("kendoValidator");
+        $("button").click(function () {
+            if (!validator.validateInput($("input[name=username]"))) {
+                alert("UserName is not valid!");
+            } else {
+                alert("UserName is valid!");
+            }
+        });
     });
+
+    function validateDate(date) {
+        if (date != null || date != undefined) {
+            debugger;
+            var a = date.split(".");
+            if (a.length < 2) {
+                alert("Enter a valid month & year in (mm.yyyy) format");
+                return false;
+            }
+            if (a[0] < 1 || a[0] > 12) {
+                alert("Enter a valid month between (01 - 12)");
+                return false;
+            }
+            if (a[1] < 1900 || a[1] > 2022) {
+                alert("Enter a valid year between (1900 - 2022)");
+                return false;
+            }
+        }
+        return true;
+    }
 </script>
