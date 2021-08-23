@@ -59,7 +59,7 @@ namespace SharePoint.Controllers
 
                     listItems.Add(obj);
                 }
-                //var json = JsonConvert.SerializeObject(listItems);
+                var json = JsonConvert.SerializeObject(listItems);
                 return Ok(listItems);
             }
         }        

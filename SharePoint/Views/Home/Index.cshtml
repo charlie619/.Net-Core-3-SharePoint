@@ -3,7 +3,7 @@
 <script>
 
     $(document).ready(function () {
-        var dataSource = new kendo.data.DataSource({
+        var gridDataSource = new kendo.data.DataSource({
             transport: {
                 read: function (options) {
                     $.ajax({
@@ -20,9 +20,10 @@
                 },
                 create: function (options) {
                     options.data.Id = 0;
+                    options.data.releaseDate = parseFloat(options.data.releaseDate);
                     var dataModel = JSON.stringify(options.data);
-
-                    if (validateDate(options.data.ReleaseDate)) {
+                    
+                    if (validateDate(options.data.releaseDate)) {
                         $.ajax({
                         url: "@Url.Action("CreateSong", "Sharepoint")",
                         type: "post",
@@ -30,10 +31,10 @@
                         contentType: "application/json; charset=utf-8",
                         cache: false,
                         data: dataModel,
-                        complete: function (data) {
+                        success: function (data) {
                             $("#songsGrid").data("kendoGrid").dataSource.read();
                         },
-                        error: function (data) {
+                            error: function (data) {
                             alert(data.responseText);
                             $("#songsGrid").data("kendoGrid").dataSource.read();
                         },
@@ -44,9 +45,10 @@
 
                 },
                 update: function (options) {
-                    var dataModel = JSON.stringify(options.data);
+                    options.data.releaseDate = parseFloat(options.data.releaseDate);
 
-                    if (validateDate(options.data.ReleaseDate)) {
+                    var dataModel = JSON.stringify(options.data);
+                    if (validateDate(options.data.releaseDate)) {
                         $.ajax({
                         url: "@Url.Action("UpdateSong", "Sharepoint")",
                         dataType: "json",
@@ -54,25 +56,20 @@
                         type: "put",
                         cache: false,
                         data: dataModel,
-                        complete: function (data) {
-                            debugger;
+                        success: function (data) {                            
                             $("#songsGrid").data("kendoGrid").dataSource.read();
                         },
                         error: function (data) {
                             alert(data.responseText);
                             $("#songsGrid").data("kendoGrid").dataSource.read();
-                        },
-                        parameterMap: function (options, operation) {
-                            if (operation !== "read" && options.models) {
-                                return { models: kendo.stringify(options.models) };
-                            }
-                        }
+                        }                        
                         });
                     } else {
                         $("#songsGrid").data("kendoGrid").dataSource.read();
                     }
                 },
                 destroy: function (options) {
+                    options.data.releaseDate = parseFloat(options.data.releaseDate);
                     var dataModel = JSON.stringify(options.data);
                     $.ajax({
                         url: "@Url.Action("DeleteSong", "Sharepoint")",
@@ -81,7 +78,7 @@
                         type: "delete",
                         cache: false,
                         data: dataModel,
-                        complete: function (data) {
+                        success: function (data) {
                             $("#songsGrid").data("kendoGrid").dataSource.read();
                         },
                         error: function (data) {
@@ -93,20 +90,20 @@
             },
             schema: {
                 model: {
-                    id: "Id",
+                    id: "id",
                     fields: {
-                        //Id: { type: "number", editable: false },
-                        Title: { type: "string", editable: true, validation: { required: true } },
-                        Author: { type: "string", editable: true, validation: { required: true } },
-                        ReleaseDate: { type: "string", editable: true, validation: { required: true } },
+                        id: { type: "number", editable: false },
+                        title: { type: "string", editable: true, validation: { required: true } },
+                        author: { type: "string", editable: true, validation: { required: true } },
+                        releaseDate: { type: "string", editable: true, validation: { required: true } },
                     }
                 }
             },
         });
 
         $("#songsGrid").kendoGrid({
-            dataSource: dataSource,
-            editable: "popup",
+            dataSource: gridDataSource,
+            editable: "inline",
             groupable: true,
             pageable: {
                 refresh: true,
@@ -115,40 +112,30 @@
             },
             sortable: true,
             filterable: true,
-            height: 500,
-            edit: function (e) {
-                e.container.find("input:first").prop('disabled', true);
-            },
+            height: 500,            
             toolbar: ["create"],
             columns: [{
-                field: "Id",
+                field: "id",
                 title: "ID",
                 width: 160
             }, {
-                field: "Title",
+                field: "title",
+                title: "Title",
                 width: 160,
             }, {
-                field: "Author",
+                field: "author",
                 title: "Author",
                 width: 200,
             }, {
-                field: "ReleaseDate",
+                field: "releaseDate",
                 title: "Release Date (mm.yyyy)"
             }, { command: ["edit", "destroy"], title: "&nbsp;", width: "200px" }]
 
-        }).data("kendoGrid");
-
-        var validator = $("#songsGrid").kendoValidator().data("kendoValidator");
-        $("button").click(function () {
-            if (!validator.validateInput($("input[name=username]"))) {
-                alert("UserName is not valid!");
-            } else {
-                alert("UserName is valid!");
-            }
-        });
+        }).data("kendoGrid");        
     });
 
     function validateDate(date) {
+        date = date.toString();
         if (date != null || date != undefined) {
             debugger;
             var a = date.split(".");
@@ -165,6 +152,6 @@
                 return false;
             }
         }
-        return true;
+         return true;        
     }
 </script>
